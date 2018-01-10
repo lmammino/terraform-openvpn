@@ -8,6 +8,7 @@ variable "subnet_cidr_block" {
 
 resource "aws_vpc" "main" {
   cidr_block = "${var.vpc_cidr_block}"
+
   tags {
     Name = "openvpn"
   }
@@ -21,14 +22,15 @@ resource "aws_subnet" "vpn_subnet" {
 
 resource "aws_internet_gateway" "gw" {
   vpc_idn = "${aws_vpc.main.id}"
+
   tags {
     Name = "Internet Gateway for openvpn"
   }
 }
 
 resource "aws_eip" "openvpn_eip" {
-  vpc         = true
-  depends_on  = ["aws_internet_gateway.gw"]
+  vpc        = true
+  depends_on = ["aws_internet_gateway.gw"]
 }
 
 resource "aws_route" "internet_access_openvpn" {
@@ -39,13 +41,14 @@ resource "aws_route" "internet_access_openvpn" {
 
 resource "aws_internet_gateway" "gw" {
   vpc_id = "${aws_vpc.main.id}"
+
   tags {
-        Name = "Internet Gateway for openvpn"
-    }
+    Name = "Internet Gateway for openvpn"
+  }
 }
 
 resource "aws_eip" "openvpn_eip" {
-  vpc      = true
+  vpc        = true
   depends_on = ["aws_internet_gateway.gw"]
 }
 

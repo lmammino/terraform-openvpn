@@ -28,3 +28,4 @@ subdomain_name = "vpn.example.com"
 # instance_type = "t2.medium"
 # admin_user = "openvpn"
 # admin_password = "openvpn"
+
