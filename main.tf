@@ -9,16 +9,32 @@ variable "subnet_cidr_block" {
 resource "aws_vpc" "main" {
   cidr_block = "${var.vpc_cidr_block}"
   tags {
-    enable_dns_support = true
-    enable_dns_hostnames = true
     Name = "openvpn"
   }
 }
 
 resource "aws_subnet" "vpn_subnet" {
-  vpc_id     = "${aws_vpc.main.id}"
+  vpc_id                  = "${aws_vpc.main.id}"
   map_public_ip_on_launch = true
-  cidr_block = "${var.subnet_cidr_block}"
+  cidr_block              = "${var.subnet_cidr_block}"
+}
+
+resource "aws_internet_gateway" "gw" {
+  vpc_idn = "${aws_vpc.main.id}"
+  tags {
+    Name = "Internet Gateway for openvpn"
+  }
+}
+
+resource "aws_eip" "openvpn_eip" {
+  vpc         = true
+  depends_on  = ["aws_internet_gateway.gw"]
+}
+
+resource "aws_route" "internet_access_openvpn" {
+  route_table_id         = "${aws_vpc.main.main_route_table_id}"
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = "${aws_internet_gateway.gw.id}"
 }
 
 resource "aws_internet_gateway" "gw" {
