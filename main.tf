@@ -8,18 +8,67 @@ variable "subnet_cidr_block" {
 
 resource "aws_vpc" "main" {
   cidr_block = "${var.vpc_cidr_block}"
+
+  tags {
+    Name = "openvpn"
+  }
 }
 
 resource "aws_subnet" "vpn_subnet" {
-  vpc_id     = "${aws_vpc.main.id}"
-  cidr_block = "${var.subnet_cidr_block}"
+  vpc_id                  = "${aws_vpc.main.id}"
+  map_public_ip_on_launch = true
+  cidr_block              = "${var.subnet_cidr_block}"
+}
+
+resource "aws_internet_gateway" "gw" {
+  vpc_idn = "${aws_vpc.main.id}"
+
+  tags {
+    Name = "Internet Gateway for openvpn"
+  }
+}
+
+resource "aws_eip" "openvpn_eip" {
+  vpc        = true
+  depends_on = ["aws_internet_gateway.gw"]
+}
+
+resource "aws_route" "internet_access_openvpn" {
+  route_table_id         = "${aws_vpc.main.main_route_table_id}"
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = "${aws_internet_gateway.gw.id}"
+}
+
+resource "aws_internet_gateway" "gw" {
+  vpc_id = "${aws_vpc.main.id}"
+
+  tags {
+    Name = "Internet Gateway for openvpn"
+  }
+}
+
+resource "aws_eip" "openvpn_eip" {
+  vpc        = true
+  depends_on = ["aws_internet_gateway.gw"]
+}
+
+resource "aws_route" "internet_access_openvpn" {
+  route_table_id         = "${aws_vpc.main.main_route_table_id}"
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = "${aws_internet_gateway.gw.id}"
 }
 
 variable "public_key" {}
 
+variable "private_key" {}
+
 resource "aws_key_pair" "openvpn" {
   key_name   = "openvpn-key"
   public_key = "${var.public_key}"
+}
+
+variable "ssh_user" {
+  default = "openvpnas"
 }
 
 variable "ssh_port" {
@@ -166,6 +215,7 @@ resource "null_resource" "provision_openvpn" {
     type        = "ssh"
     host        = "${aws_instance.openvpn.public_ip}"
     user        = "${var.ssh_user}"
+    port        = "${var.ssh_port}"
     private_key = "${var.private_key}"
     agent       = false
   }
